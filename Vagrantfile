@@ -24,8 +24,8 @@ Vagrant.configure("2") do |config|
     foo.vm.network "private_network", ip: "172.28.128.200", virtualbox__intnet: "puppet"
     foo.vm.network "forwarded_port", guest: 8081, host: 8080
     foo.vm.provision "shell", inline: "yum -y install puppet-server puppet-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf"
-    foo.vm.provision "shell", inline: "yum -y install ruby193 ; scl enable ruby193 'ruby -v' ; scl enable ruby193 'bash'"
-    foo.vm.provision "shell", inline: "gem install librarian-puppet"
+    foo.vm.provision "shell", inline: 'yum -y groupinstall "Development tools"'
+    foo.vm.provision "shell", inline: 'yum -y install ruby193 ruby193-ruby-devel ; scl enable ruby193 "ruby -v" ; scl enable ruby193 "bash"; gem install librarian-puppet"'
     foo.vm.provision "shell", inline: "/sbin/chkconfig puppetdb on ; /sbin/service puppetdb start"
     foo.vm.provision "shell", inline: "/sbin/chkconfig puppetmaster on ; /sbin/service puppetmaster start"
   end
