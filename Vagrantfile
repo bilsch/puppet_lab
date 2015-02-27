@@ -1,4 +1,4 @@
-slaves = 3
+slaves = 10
 local_domain = 'local'
 
 # Build and write a little /etc/hosts file
@@ -23,12 +23,13 @@ Vagrant.configure("2") do |config|
     foo.vm.hostname = "master.local"
     foo.vm.network "private_network", ip: "172.28.128.200", virtualbox__intnet: "puppet"
     foo.vm.network "forwarded_port", guest: 8081, host: 8080
-    foo.vm.provision "shell", inline: "yum -y install puppet-server puppetdb-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf; puppetdb ssl-setup"
+    foo.vm.provision "shell", inline: "yum -y install puppet-server puppetdb-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf;"
     foo.vm.provision "shell", inline: 'yum -y groupinstall "Development tools"'
-    foo.vm.provision "shell", inline: 'yum -y install ruby193 ruby193-ruby-devel ; scl enable ruby193 "ruby -v"'
+    foo.vm.provision "shell", inline: 'yum -y install ruby193 ruby193-ruby-devel rubygem-puppet-lint vim; scl enable ruby193 "ruby -v"'
     # won't work as the enable execs ruby in a sub shell ; scl enable ruby193 "bash"; gem install librarian-puppet"'
     foo.vm.provision "shell", inline: "/sbin/chkconfig puppetdb on ; /sbin/service puppetdb start"
-    foo.vm.provision "shell", inline: "/sbin/chkconfig puppetmaster on ; /sbin/service puppetmaster start"
+    foo.vm.provision "shell", inline: "/sbin/chkconfig puppetmaster on ; /sbin/service puppetmaster start" 
+    foo.vm.provision "shell", inline: "puppet agent --test ; puppetdb ssl-setup"
   end
 
   (5..(slaves+4)).each do |i|
@@ -45,7 +46,7 @@ Vagrant.configure("2") do |config|
     # Boot with headless mode
     vb.gui = false
     # Use VBoxManage to customize the VM. For example to change memory:
-    vb.customize ["modifyvm", :id, "--memory", "#{memory}"]
+    #vb.customize ["modifyvm", :id, "--memory", "#{memory}"]
     vb.customize ["modifyvm", :id, "--autostart-enabled", "#{autostart}"]
   end
 end
