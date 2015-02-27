@@ -1,4 +1,4 @@
-slaves = 2
+slaves = 10
 local_domain = 'local'
 
 # Build and write a little /etc/hosts file
@@ -26,8 +26,8 @@ Vagrant.configure("2") do |config|
     foo.vm.provision "shell", inline: "yum -y install rubygem-puppet-lint vim lsof nc puppet-server puppetdb-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf;"
     foo.vm.provision "shell", inline: 'yum -y groupinstall "Development tools"'
     foo.vm.provision "shell", inline: 'gem install librarian-puppet'
-    foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppetdb.service ; /usr/sbin/systemctl start puppetdb.service"
-    foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppetmaster.service ; /usr/sbin/service puppetmaster.service" 
+    foo.vm.provision "shell", inline: "/usr/bin/systemctl enable puppetdb.service ; /usr/bin/systemctl start puppetdb.service"
+    foo.vm.provision "shell", inline: "/usr/bin/systemctl enable puppetmaster.service ; /usr/bin/service puppetmaster.service" 
     foo.vm.provision "shell", inline: "puppet agent --test ; puppetdb ssl-setup"
     foo.vm.provider :virtualbox do |vb|
       vb.gui = false
@@ -41,7 +41,7 @@ Vagrant.configure("2") do |config|
       foo.vm.network "private_network", ip: "172.28.128.#{i}", virtualbox__intnet: "puppet"
       foo.vm.hostname = "slave#{i}"
       foo.vm.provision "shell", inline: "yum -y install puppet ; cp /vagrant/puppet.conf /etc/puppet/puppet.conf"
-      foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppet.service ; /usr/sbin/systemctl start puppet.service"
+      foo.vm.provision "shell", inline: "/usr/bin/systemctl enable puppet.service ; /usr/bin/systemctl start puppet.service"
       foo.vm.provider :virtualbox do |vb|
         vb.gui = false
         vb.customize ["modifyvm", :id, "--memory", "1024"]
