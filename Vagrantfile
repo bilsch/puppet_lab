@@ -1,4 +1,4 @@
-slaves = 10
+slaves = 2
 local_domain = 'local'
 
 # Build and write a little /etc/hosts file
@@ -12,41 +12,41 @@ File.open("hosts", "w+") do |file|
 end
 
 Vagrant.configure("2") do |config|
-  memory = 2048
-  autostart = "on" # switch to on to ensure the vm stays up across host reboots
-  config.vm.box = "chef/centos-6.5"
-  config.vm.provision "shell", inline: "yum -y install http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm"
-  config.vm.provision "shell", inline: "yum -y install centos-release-SCL"
+  autostart = "off" # switch to on to ensure the vm stays up across host reboots
+  #config.vm.box = "chef/centos-6.5"
+  config.vm.box = "chef/centos-7.0"
+  config.vm.provision "shell", inline: "yum -y install http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm"
+  config.vm.provision "shell", inline: "yum -y install http://mirror.oss.ou.edu/epel/7/x86_64/e/epel-release-7-5.noarch.rpm"
   config.vm.provision "shell", inline: "cat /vagrant/hosts >> /etc/hosts"
 
   config.vm.define 'master', primary: true do |foo|
     foo.vm.hostname = "master.local"
     foo.vm.network "private_network", ip: "172.28.128.200", virtualbox__intnet: "puppet"
     foo.vm.network "forwarded_port", guest: 8081, host: 8080
-    foo.vm.provision "shell", inline: "yum -y install puppet-server puppetdb-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf;"
+    foo.vm.provision "shell", inline: "yum -y install rubygem-puppet-lint vim lsof nc puppet-server puppetdb-terminus puppetdb; cp /vagrant/puppet.conf /etc/puppet/puppet.conf; cp /vagrant/puppetdb.conf /etc/puppet/puppetdb.conf;"
     foo.vm.provision "shell", inline: 'yum -y groupinstall "Development tools"'
-    foo.vm.provision "shell", inline: 'yum -y install ruby193 ruby193-ruby-devel rubygem-puppet-lint vim; scl enable ruby193 "ruby -v"'
-    # won't work as the enable execs ruby in a sub shell ; scl enable ruby193 "bash"; gem install librarian-puppet"'
-    foo.vm.provision "shell", inline: "/sbin/chkconfig puppetdb on ; /sbin/service puppetdb start"
-    foo.vm.provision "shell", inline: "/sbin/chkconfig puppetmaster on ; /sbin/service puppetmaster start" 
+    foo.vm.provision "shell", inline: 'gem install librarian-puppet'
+    foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppetdb.service ; /usr/sbin/systemctl start puppetdb.service"
+    foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppetmaster.service ; /usr/sbin/service puppetmaster.service" 
     foo.vm.provision "shell", inline: "puppet agent --test ; puppetdb ssl-setup"
+    foo.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.customize ["modifyvm", :id, "--memory", "2048"]
+      vb.customize ["modifyvm", :id, "--autostart-enabled", "#{autostart}"]
+    end
   end
 
   (5..(slaves+4)).each do |i|
     config.vm.define "slave#{i}" do |foo|
       foo.vm.network "private_network", ip: "172.28.128.#{i}", virtualbox__intnet: "puppet"
       foo.vm.hostname = "slave#{i}"
-      foo.vm.provision "shell", inline: "yum -y install puppet centos-release-SCL; cp /vagrant/puppet.conf /etc/puppet/puppet.conf"
-      foo.vm.provision "shell", inline: "yum -y install ruby193 ; scl enable ruby193 'ruby -v' ; scl enable ruby193 'bash'"
-      foo.vm.provision "shell", inline: "/sbin/chkconfig puppet on ; /sbin/service puppet start"
+      foo.vm.provision "shell", inline: "yum -y install puppet ; cp /vagrant/puppet.conf /etc/puppet/puppet.conf"
+      foo.vm.provision "shell", inline: "/usr/sbin/systemctl enable puppet.service ; /usr/sbin/systemctl start puppet.service"
+      foo.vm.provider :virtualbox do |vb|
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--memory", "1024"]
+        vb.customize ["modifyvm", :id, "--autostart-enabled", "#{autostart}"]
+      end
     end
-  end
-
-  config.vm.provider :virtualbox do |vb|
-    # Boot with headless mode
-    vb.gui = false
-    # Use VBoxManage to customize the VM. For example to change memory:
-    #vb.customize ["modifyvm", :id, "--memory", "#{memory}"]
-    vb.customize ["modifyvm", :id, "--autostart-enabled", "#{autostart}"]
   end
 end
