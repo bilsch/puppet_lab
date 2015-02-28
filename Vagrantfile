@@ -1,4 +1,4 @@
-slaves = 10
+slaves = 2
 local_domain = 'local'
 
 # Build and write a little /etc/hosts file
